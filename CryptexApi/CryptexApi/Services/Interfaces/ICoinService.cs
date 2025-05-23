@@ -6,5 +6,5 @@ namespace CryptexApi.Services.Interfaces;
 public interface ICoinService
 {
     Task<Coin> UpdatePrice(int id);
-    Task<List<double>> GetPriceHistory(NameOfCoin coin, string timePeriod);
+    Task<List<double>> GetPriceHistory(NameOfCoin coin, BinanceInterval timePeriod);
 }
