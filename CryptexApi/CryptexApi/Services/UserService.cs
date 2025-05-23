@@ -51,7 +51,8 @@ namespace CryptexApi.Services
         {
             if (registrationModel != null)
             {
-                var userEntity = new User()
+                var parsedRole = Enum.Parse<Role>(registrationModel.Role);
+                var baseUser = new User()
                 {
                     GoogleID = registrationModel.GoogleID,
                     Email = registrationModel.Email,
@@ -63,16 +64,22 @@ namespace CryptexApi.Services
                     Age = registrationModel.Age,
                     Country = registrationModel.Country,
                     Adress = registrationModel.Adress,
-                    Role = Enum.Parse<Role>(registrationModel.Role)
+                    Role = parsedRole
                 };
 
                 if (!IsGoogleRegistration)
                 {
                     var hashedPassword = PasswordHasher.HashPassword(registrationModel.Password);
-
-                    userEntity.PasswordHash = hashedPassword.hash;
-                    userEntity.PasswordSalt = hashedPassword.salt;
+                    baseUser.PasswordHash = hashedPassword.hash;
+                    baseUser.PasswordSalt = hashedPassword.salt;
                 }
+
+                User userEntity = parsedRole switch
+                {
+                    Role.Admin => new Admin(baseUser), 
+                    Role.Support => new Support(baseUser),
+                    _ => baseUser 
+                };
 
                 await _unitOfWork.UserRepository.AddAsync(userEntity);
                 await _unitOfWork.SaveChangesAsync();
