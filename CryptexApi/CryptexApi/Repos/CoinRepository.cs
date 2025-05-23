@@ -5,6 +5,7 @@ using CryptexApi.Repos.Interfaces;
 using System.Text.Json;
 using CryptexApi.Helpers;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace CryptexApi.Repos;
 
@@ -24,10 +25,9 @@ public class CoinRepository(AppDbContext context) : BaseRepository<Coin>(context
                 var response = await httpClient.GetStringAsync(url);
 
                 var result = JsonSerializer.Deserialize<Dictionary<string, string>>(response);
-                if (result != null && result.TryGetValue("price", out var priceStr) &&
-                    double.TryParse(priceStr, out var price))
+                if (result != null)
                 {
-                    prices[coin] = price;
+                    prices[coin] = double.Parse(result["price"], CultureInfo.InvariantCulture);
                 }
             }
             catch
@@ -42,9 +42,9 @@ public class CoinRepository(AppDbContext context) : BaseRepository<Coin>(context
             if (prices.TryGetValue(coin.Name, out var price))
             {
                 coin.Price = price;
+                context.Coins.Update(coin);
             }
         }
-
         await context.SaveChangesAsync();
     }
 }
