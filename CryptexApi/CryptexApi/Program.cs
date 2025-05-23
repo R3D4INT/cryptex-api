@@ -53,6 +53,25 @@ namespace CryptexApi
             SD.Issuer = builder.Configuration["Jwt:Issuer"];
             SD.JWTKey = builder.Configuration["Jwt:Key"];
             SD.Audience = builder.Configuration["Audience"];
+            builder.Services.AddQuartz(q =>
+            {
+                q.UseMicrosoftDependencyInjectionJobFactory();
+
+                var jobKey = new JobKey(nameof(UpdateCoinPrices));
+
+                q.AddJob<UpdateCoinPrices>(jobKey, opts => opts
+                    .WithDescription("Update coin prices")
+                    .StoreDurably());
+
+                q.AddTrigger(t => t
+                    .ForJob(jobKey)
+                    .WithSimpleSchedule(x => x.WithIntervalInMinutes(15).RepeatForever()));
+            });
+
+            builder.Services.AddQuartzHostedService(options =>
+            {
+                options.WaitForJobsToComplete = true;
+            });
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
 
             builder.Services.AddDbContext<AppDbContext>(options =>
@@ -125,7 +144,7 @@ namespace CryptexApi
                     .AddJob<UpdateCoinPrices>(jobKey)
                     .AddTrigger(trigger => trigger.ForJob(jobKey)
                         .WithSimpleSchedule(schedule => schedule
-                            .WithIntervalInMinutes(30).RepeatForever()));
+                            .WithIntervalInMinutes(1).RepeatForever()));
             });
 
             var app = builder.Build();

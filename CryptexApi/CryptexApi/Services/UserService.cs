@@ -264,7 +264,6 @@ namespace CryptexApi.Services
                     throw new Exception($"Failed to get wallet");
                 }
                 var user = result.Data;
-                user.Wallet = await GetMyWallet(user.Id);
                 var coinForConvert = user.Wallet.AmountOfCoins.FirstOrDefault(e => e.Name == CoinForConvert);
                 var coinToConvertInto = user.Wallet.AmountOfCoins.FirstOrDefault(e => e.Name == imWhichCoinConvert);
 
