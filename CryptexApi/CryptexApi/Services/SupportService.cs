@@ -80,17 +80,27 @@ namespace CryptexApi.Services
                 throw new Exception($"Failed to close ticket {e.Message}");
             }
         }
+
+        public async Task<Ticket> GetCurrentTicket(int supportId)
+        {
+            var result = await _unitOfWork.SupportRepository
+                .GetSingleByConditionAsync(e => e.Id == supportId);
+
+            if (!result.IsSuccess)
+            {
+                throw new Exception("Failed to get support");
+            }
+
+            var support = result.Data;
+            return support.TicketInProgress;
+        }
+
         public async Task<List<Ticket>> GetOpenTickets()
         {
             try
             {
                 var tickets = await _unitOfWork.TicketRepository.GetListByConditionAsync(e => e.Status == Status.Open);
-                var ticketsList = tickets.Data.ToList();
-                for (var i = 0; i < ticketsList.Count(); i++)
-                {
-                    ticketsList[i].ChatHistory = await _messageService.GetChatHistoryOfTicket(ticketsList[i].Id);
-                }
-                return (List<Ticket>)tickets.Data;
+                return tickets.Data.ToList();
             }
             catch (Exception e)
             {

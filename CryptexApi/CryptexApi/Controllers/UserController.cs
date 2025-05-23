@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CryptexApi.Controllers;
 
-[Authorize(Roles = "User")]
+[Authorize(Roles = "User, Support, Admin")]
 [Route("api/user")]
 [ApiController]
 public class UserController : ControllerBase
