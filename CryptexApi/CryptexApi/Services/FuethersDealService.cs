@@ -138,7 +138,7 @@ namespace CryptexApi.Services
             {
                 var deals = await _unitOfWork.FuethersDealRepository
                     .GetListByConditionAsync(e => e.UserId == userId);
-                return (List<FuethersDeal>)deals.Data;
+                return deals.Data.ToList();
             }
             catch (Exception e)
             {
