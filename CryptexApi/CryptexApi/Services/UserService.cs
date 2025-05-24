@@ -67,19 +67,19 @@ namespace CryptexApi.Services
                     Role = parsedRole
                 };
 
-                if (!IsGoogleRegistration)
-                {
-                    var hashedPassword = PasswordHasher.HashPassword(registrationModel.Password);
-                    baseUser.PasswordHash = hashedPassword.hash;
-                    baseUser.PasswordSalt = hashedPassword.salt;
-                }
-
-                User userEntity = parsedRole switch
+                var userEntity = parsedRole switch
                 {
                     Role.Admin => new Admin(baseUser), 
                     Role.Support => new Support(baseUser),
                     _ => baseUser 
                 };
+
+                if (!IsGoogleRegistration)
+                {
+                    var hashedPassword = PasswordHasher.HashPassword(registrationModel.Password);
+                    userEntity.PasswordHash = hashedPassword.hash;
+                    userEntity.PasswordSalt = hashedPassword.salt;
+                }
 
                 await _unitOfWork.UserRepository.AddAsync(userEntity);
                 await _unitOfWork.SaveChangesAsync();
