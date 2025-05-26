@@ -6,6 +6,7 @@ using CryptexApi.Models;
 using CryptexApi.UnitOfWork;
 using CryptexApi.Models.Identity;
 using CryptexApi.Services.Interfaces;
+using CryptexApi.Strings;
 
 namespace CryptexApi.Services
 {
@@ -16,13 +17,16 @@ namespace CryptexApi.Services
         private readonly ITicketService _ticketService;
 
         private readonly IUnitOfWork _unitOfWork;
+
+        private readonly IEmailService _emailService;
         public UserService( IWalletService walletService,
-            ITicketService ticketService, IUnitOfWork unitOfWork)
+            ITicketService ticketService, IUnitOfWork unitOfWork, IEmailService emailService)
         {
             _walletService = walletService;
             _ticketService = ticketService;
             _unitOfWork = unitOfWork;
-        }
+            _emailService = emailService;
+        }   
         public async Task<User> GetById(int id)
         {
             var user = await _unitOfWork.UserRepository
@@ -95,8 +99,14 @@ namespace CryptexApi.Services
                 var result = await _unitOfWork.UserRepository
                     .GetSingleByConditionAsync(x => x.Email == loginModel.Email);
                 var user = result.Data;
+
                 if (user != null && PasswordHasher.VerifyPassword(loginModel.Password, user.PasswordHash, user.PasswordSalt))
                 {
+                    if (!user.IsSilent)
+                    {
+                        await _emailService.SendEmail(user.Email, EmailStrings.WelcomeSubject,
+                            EmailStrings.GetWelcomeBody(user.Name, user.Surname));
+                    }
                     return user;
                 }
             }
@@ -106,8 +116,9 @@ namespace CryptexApi.Services
 
         public async Task<bool> Update(User user)
         {
-            _unitOfWork.UserRepository.UpdateAsync(user, e => e.Id == user.Id);
+            await _unitOfWork.UserRepository.UpdateAsync(user, e => e.Id == user.Id);
             await _unitOfWork.SaveChangesAsync();
+
             return true;
         }
         public async Task<double> GetTotalWalletBalance(int id)
@@ -116,12 +127,20 @@ namespace CryptexApi.Services
             {
                 var result = await _unitOfWork.UserRepository
                     .GetSingleByConditionAsync(e => e.Id == id);
+
                 if (!result.IsSuccess)
                 {
                     throw new Exception($"Failed to get wallet");
                 }
+
                 var user = result.Data;
                 var wallet = user.Wallet;
+
+                if (!user.IsSilent)
+                {
+                    await _emailService.SendEmail(user.Email, EmailStrings.BalanceSubject,
+                        EmailStrings.GetBalanceBody(user.Name, user.Surname, user.Balance));
+                }
 
                 return wallet.AmountOfCoins.Sum(coin => coin.Amount * coin.Price);
             }
@@ -137,14 +156,16 @@ namespace CryptexApi.Services
             {
                 var result = await _unitOfWork.UserRepository
                     .GetSingleByConditionAsync(e => e.Id == id);
+               
                 if (!result.IsSuccess)
                 {
                     throw new Exception($"Failed to get wallet");
                 }
-                var user = result.Data;
 
+                var user = result.Data;
                 user.Wallet = await GetMyWallet(user.Id);
                 var coinInWallet = user.Wallet.AmountOfCoins.FirstOrDefault(c => c.Name == coin);
+                
                 if (coinInWallet == null)
                 {
                     throw new Exception($"Coin {coin} not found in user's wallet");
@@ -162,6 +183,18 @@ namespace CryptexApi.Services
                 await _walletService.UpdateCoin(coinInWallet);
                 await _unitOfWork.UserRepository.UpdateAsync(user, e => e.Id == id);
                 await _unitOfWork.SaveChangesAsync();
+
+                if (!user.IsSilent)
+                {
+                    await _emailService.SendEmail(user.Email, EmailStrings.BuyCoinSubject,
+                        EmailStrings.GetBuyCoinBody(
+                            user.Name, 
+                            user.Surname,
+                            coin, amount,
+                            user.Balance
+                            )
+                        );
+                }
             }
             catch (Exception e)
             {
@@ -174,14 +207,16 @@ namespace CryptexApi.Services
             {
                 var result = await _unitOfWork.UserRepository
                     .GetSingleByConditionAsync(e => e.Id == id);
+
                 if (!result.IsSuccess)
                 {
                     throw new Exception($"Failed to get wallet");
                 }
+
                 var user = result.Data;
                 user.Wallet = await GetMyWallet(user.Id);
-              
                 var coinInWallet = user.Wallet.AmountOfCoins.FirstOrDefault(c => c.Name == coin);
+                
                 if (coinInWallet == null)
                 {
                     throw new Exception($"Coin {coin} not found in user's wallet");
@@ -190,6 +225,7 @@ namespace CryptexApi.Services
                 if (coinInWallet.Amount < amount)
                 {
                     throw new Exception($"Amount of coin in wallet is less than you want to sell");
+
                 }
                 var moneyIncomeAfterOperation = coinInWallet.Price * amount;
                 user.Balance += moneyIncomeAfterOperation;
@@ -197,6 +233,18 @@ namespace CryptexApi.Services
                 await _walletService.UpdateCoin(coinInWallet);
                 await _unitOfWork.UserRepository.UpdateAsync(user, e => e.Id == id);
                 await _unitOfWork.SaveChangesAsync();
+
+                if (!user.IsSilent)
+                {
+                    await _emailService.SendEmail(user.Email, EmailStrings.SellCoinSubject,
+                        EmailStrings.GetSellCoinBody(
+                            user.Name,
+                            user.Surname,
+                            coin, amount,
+                            user.Balance
+                        )
+                    );
+                }
             }
             catch (Exception e)
             {
@@ -209,6 +257,15 @@ namespace CryptexApi.Services
             try
             {
                 var ticket = await _ticketService.CreateTicket(id);
+                var user = await _unitOfWork.UserRepository
+                    .GetSingleByConditionAsync(e => e.Id == id);
+
+                if (!user.Data.IsSilent)
+                {
+                    await _emailService.SendEmail(user.Data.Email, EmailStrings.WelcomeSubject,
+                        EmailStrings.GetTicketCreatedBody(user.Data.Name, user.Data.Surname, ticket.Id, ticket.Status));
+                }
+                
                 return ticket;
             }
             catch (Exception e)
@@ -287,6 +344,13 @@ namespace CryptexApi.Services
                 await _walletService.UpdateCoin(coinToConvertInto);
                 await _unitOfWork.UserRepository.UpdateAsync(user, e => e.Id == idOfUser);
                 await _unitOfWork.SaveChangesAsync();
+
+                if (!user.IsSilent)
+                {
+                    await _emailService.SendEmail(user.Email, EmailStrings.ConvertCurrencySubject,
+                        EmailStrings.GetConvertCurrencyBody(user.Name, user.Surname, CoinForConvert,
+                            coinForConvert.Amount, imWhichCoinConvert, coinToConvertInto.Amount));
+                }
             }
             catch (Exception ex)
             {
