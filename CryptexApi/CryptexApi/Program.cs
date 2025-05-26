@@ -2,6 +2,7 @@ using System.Text;
 using CryptexApi.BackGroundJob;
 using CryptexApi.Context;
 using CryptexApi.Identity.Services;
+using CryptexApi.Models;
 using CryptexApi.Models.Identity;
 using CryptexApi.Repos;
 using CryptexApi.Repos.Interfaces;
@@ -101,7 +102,10 @@ namespace CryptexApi
             builder.Services.AddScoped<IWalletService, WalletService>();
             builder.Services.AddScoped<IMarketWalletService, MarketWalletService>();
             builder.Services.AddScoped<IUserService, UserService>();
-            builder.Services.AddScoped<ITokenGeneratingService, TokenGeneratingService>();
+            builder.Services.AddScoped<ITokenGeneratingService, TokenGeneratingService>(); builder.Services.Configure<EmailSettings>(
+                builder.Configuration.GetSection("EmailSettings"));
+
+            builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
