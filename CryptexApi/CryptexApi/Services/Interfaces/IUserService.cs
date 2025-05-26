@@ -13,4 +13,5 @@ public interface IUserService : ISpotOperations, IAuth
     Task SendMessageToTicketChat(int idOfTicket, int idOfAuthorOfMessage, string valueOfMessage);
     Task<List<Ticket>> GetAllMyTickets(int userId);
     Task<Wallet> GetMyWallet(int userId);
+    Task<User> SwitchSilentMode(int userId);
 }

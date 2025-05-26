@@ -157,4 +157,18 @@ public class UserController : ControllerBase
             return BadRequest(new { message = $"Error: {e.Message}" });
         }
     }
+
+    [HttpPatch("{userId}/silent-switch")]
+    public async Task<IActionResult> SwitchSilentMode(int userId)
+    {
+        try
+        {
+            var user = await _userService.SwitchSilentMode(userId);
+            return Ok(user);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { message = $"Error: {e.Message}" });
+        }
+    }
 }

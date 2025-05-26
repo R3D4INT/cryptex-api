@@ -1,6 +1,5 @@
 ﻿using CryptexApi.Enums;
 using CryptexApi.Helpers;
-using CryptexApi.Models.Base;
 using CryptexApi.Models.Persons;
 using CryptexApi.Models.Wallets;
 using CryptexApi.Models;
@@ -16,15 +15,12 @@ namespace CryptexApi.Services
 
         private readonly ITicketService _ticketService;
 
-        private readonly IMessageService _messageService;
-
         private readonly IUnitOfWork _unitOfWork;
         public UserService( IWalletService walletService,
-            ITicketService ticketService, IMessageService messageService, IUnitOfWork unitOfWork)
+            ITicketService ticketService, IUnitOfWork unitOfWork)
         {
             _walletService = walletService;
             _ticketService = ticketService;
-            _messageService = messageService;
             _unitOfWork = unitOfWork;
         }
         public async Task<User> GetById(int id)
@@ -335,5 +331,17 @@ namespace CryptexApi.Services
             }
         }
 
+        public async Task<User> SwitchSilentMode(int userId)
+        {
+            var user = await _unitOfWork.UserRepository
+                .GetSingleByConditionAsync(e => e.Id == userId);
+
+            user.Data.IsSilent = !user.Data.IsSilent;
+
+            await _unitOfWork.UserRepository.UpdateAsync(user.Data, e => e.Id == userId);
+            await _unitOfWork.SaveChangesAsync();
+
+            return user.Data;
+        }
     }
 }

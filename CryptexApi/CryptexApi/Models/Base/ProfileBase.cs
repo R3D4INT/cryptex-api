@@ -21,5 +21,6 @@ namespace CryptexApi.Models.Base
         public bool IsBanned { get; set; }
         public string? PasswordHash { get; set; }
         public string? PasswordSalt { get; set; }
+        public bool IsSilent { get; set; } = true;
     }
 }
