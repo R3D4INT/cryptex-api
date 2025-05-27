@@ -14,4 +14,5 @@ public interface IUserService : ISpotOperations, IAuth
     Task<List<Ticket>> GetAllMyTickets(int userId);
     Task<Wallet> GetMyWallet(int userId);
     Task<User> SwitchSilentMode(int userId);
+    Task RecomendCryptex(int userId);
 }
