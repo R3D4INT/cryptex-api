@@ -1,4 +1,4 @@
-﻿namespace CryptexApi.Models
+﻿namespace CryptexApi.Models.Options
 {
     public class EmailSettings
     {
