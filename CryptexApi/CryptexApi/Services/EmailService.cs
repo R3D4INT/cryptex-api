@@ -1,8 +1,8 @@
-﻿using CryptexApi.Models;
-using CryptexApi.Services.Interfaces;
+﻿using CryptexApi.Services.Interfaces;
 using Microsoft.Extensions.Options;
 using System.Net.Mail;
 using System.Net;
+using CryptexApi.Models.Options;
 
 namespace CryptexApi.Services
 {

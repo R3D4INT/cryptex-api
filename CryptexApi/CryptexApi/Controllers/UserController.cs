@@ -171,4 +171,18 @@ public class UserController : ControllerBase
             return BadRequest(new { message = $"Error: {e.Message}" });
         }
     }
+
+    [HttpGet("{userId}/recommend-cryptex")]
+    public async Task<IActionResult> RecommendCryptex(int userId)
+    {
+        try
+        {
+            await _userService.RecomendCryptex(userId);
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { message = $"Error: {e.Message}" });
+        }
+    }
 }

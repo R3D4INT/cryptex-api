@@ -19,13 +19,16 @@ namespace CryptexApi.Services
         private readonly IUnitOfWork _unitOfWork;
 
         private readonly IEmailService _emailService;
+
+        private readonly IMastodonService _mastodonService;
         public UserService( IWalletService walletService,
-            ITicketService ticketService, IUnitOfWork unitOfWork, IEmailService emailService)
+            ITicketService ticketService, IUnitOfWork unitOfWork, IEmailService emailService, IMastodonService mastodonService)
         {
             _walletService = walletService;
             _ticketService = ticketService;
             _unitOfWork = unitOfWork;
             _emailService = emailService;
+            _mastodonService = mastodonService;
         }   
         public async Task<User> GetById(int id)
         {
@@ -406,6 +409,26 @@ namespace CryptexApi.Services
             await _unitOfWork.SaveChangesAsync();
 
             return user.Data;
+        }
+
+        public async Task RecomendCryptex(int userId)
+        {
+            var result = await _unitOfWork.UserRepository.GetSingleByConditionAsync(u => u.Id == userId);
+            if (!result.IsSuccess || result.Data == null)
+            {
+                throw new Exception($"User with ID {userId} not found.");
+            }
+
+            var user = result.Data;
+
+            var tweet = string.Format(MastodonStrings.MastodonRecommendationTemplate, user.Name, user.Surname);
+
+            var success = await _mastodonService.PostStatusAsync(tweet);
+
+            if (!success)
+            {
+                throw new Exception("Failed to post recommendation tweet.");
+            }
         }
     }
 }
