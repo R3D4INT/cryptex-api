@@ -185,4 +185,18 @@ public class UserController : ControllerBase
             return BadRequest(new { message = $"Error: {e.Message}" });
         }
     }
+
+    [HttpPatch("{userId}/change-balance")]
+    public async Task<IActionResult> ChangeUserBalance(int userId, [FromQuery] double amount)
+    {
+        try
+        {
+            var user = await _userService.ChangeBalance(userId, amount);
+            return Ok(user);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { message = $"Error: {e.Message}" });
+        }
+    }
 }
