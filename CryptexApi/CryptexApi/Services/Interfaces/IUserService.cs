@@ -15,4 +15,5 @@ public interface IUserService : ISpotOperations, IAuth
     Task<Wallet> GetMyWallet(int userId);
     Task<User> SwitchSilentMode(int userId);
     Task RecomendCryptex(int userId);
+    Task<User> ChangeBalance(int userId, double amount);
 }

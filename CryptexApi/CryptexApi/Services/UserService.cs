@@ -430,5 +430,24 @@ namespace CryptexApi.Services
                 throw new Exception("Failed to post recommendation tweet.");
             }
         }
+
+        public async Task<User> ChangeBalance(int userId, double amount)
+        {
+            var result = await _unitOfWork.UserRepository
+                .GetSingleByConditionAsync(e => e.Id == userId);
+
+            if (!result.IsSuccess)
+            {
+                throw new Exception($"Failed to get wallet");
+            }
+
+            var user = result.Data;
+            user.Balance += amount;
+
+            await _unitOfWork.UserRepository.UpdateAsync(user, e => e.Id == userId);
+            await _unitOfWork.SaveChangesAsync();
+
+            return user;
+        }
     }
 }
